@@ -1,71 +1,122 @@
 #include "array.h"
-
 #include <stdio.h>
 
-array_t *array_create()
+array_t *array_init(int size)
 {
-	array_t *array = NULL;
-	array = malloc(sizeof(array_t));
-	if (array == NULL) {
+	array_t *p;
+	p = (array_t *)malloc(sizeof(array_t));
+	if (p == NULL) {
 		return NULL;
 	}
-	array->p = NULL;
-	array->size = 0;
-	array->len = 0;
-	array->typesize = 0;
-	return array;
-}
-void array_init(array_t *array, int size, int typesize)
-{
-	if (array == NULL && size<0 && typesize <=0) {
-		return;
+	p->len = 0;
+	p->size = size;
+	p->p = (int *)calloc(1, size*sizeof(int));
+	if (p->p == NULL) {
+		free(p);
+		return NULL;
 	}
 
-	array->size = size;
-	array->typesize = typesize;
-	array->len = 0;	
-	array->p = calloc(1, size*typesize);
-	
-	if (array->p == NULL) {
-		return;
-	}
+	return p;
 }
 
 void array_free(array_t *array)
 {
-	if (array = NULL)
-		return;
-	if (array->p != NULL) {
-		free(array->p);
-		array->p = NULL;
-	}
+	if (array == NULL)
+	  return;
+	if (array->p != NULL)
+	  free(array->p);
 	free(array);
-	array = NULL;
 }
 
-//int array_insert(array_t *array, size_t pos, void *const value);
-//size_t array_search_val(array_t *array, void *const value);
-//void *array_get_index_val(array_t *array, size_t index);
-//int array_modify(array_t *array, size_t pos, void *const value);
-//size_t array_len(array_t *array);
-//void array_del_val(array_t *array, void *const value);
-//void array_del_index(array_t *array, size_t index);
+int array_insert(array_t *array, int value)
+{
+	int index, len;
+	int *src, *dst;
+	if (array == NULL && array->len >= array->size)
+	  return -1;
+
+	for (index = 0; index < array->len; index++) {
+		if (array->p[index] >= value) {
+			break;
+		}
+	}
+	//printf("index:%d val:%d\n", index, array->p[index]);
+
+	src = &array->p[array->len];
+	dst = &array->p[array->len + 1];
+	len = array->len - index + 1;
+
+	while (len--) {
+		*dst-- = *src--;
+	}
+
+	array->p[index] = value;
+	array->len++;
+
+	return 0;
+}
+
+int array_len(array_t *array)
+{
+	if (array != NULL)
+	  return array->len;
+	return 0;
+}
+
+void array_del_val(array_t *array, int value)
+{
+	int index, len;
+	int *src, *dst;
+
+	for (index = 0; index < array->len; index++) {
+		if (array->p[index] == value) {
+			break;
+		}
+	}
+	if (index >= array->len) {
+		printf("not find value\n");	
+		return;
+	}
+
+	len = array->len - index + 1;
+	src = &array->p[index + 1];
+	dst = &array->p[index];
+
+	while (len--) {
+		*dst++ = *src++;
+	}
+	array->len--;
+}
 
 void array_print(array_t *array)
 {
-	int i = 0;
+	int i;
 	for (i=0; i<array->len; i++) {
-		printf("%d\n", *((int *)array->p + i));
+		printf("%d ", array->p[i]);
 	}
+	printf("\n");
 }
 
 int main(int argc, char **argv)
 {
 	array_t *p;
-	
-	p = array_create();	
-	array_init(p, 20, sizeof(int));		
+	p = array_init(10);
+	array_insert(p, 2);
 	array_print(p);
-
+	array_insert(p, 5);
+	array_print(p);
+	array_insert(p, 3);
+	array_print(p);
+	array_insert(p, 1);
+	array_print(p);
+	array_insert(p, 4);
+	array_print(p);
+	array_del_val(p, 3);
+	array_print(p);
+	array_del_val(p, 6);
+	array_print(p);
+	array_del_val(p, 5);
+	array_print(p);
+	array_free(p);
 	return 0;
 }
