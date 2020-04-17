@@ -15,14 +15,14 @@ link_list_t *list_init(void)
 
 link_list_t *list_add_node_head(link_list_t *list, int val)
 {
-	list_node_t *pnode;
+	list_node_t *pnew;
 	
-	pnode = (list_node_t *)malloc(sizeof(*pnode));
-	pnode->value = (int *)malloc(sizeof(int)); 
-	*pnode->value = val;
+	pnew = (list_node_t *)malloc(sizeof(*pnew));
+	pnew->value = (int *)malloc(sizeof(int)); 
+	*pnew->value = val;
 
-	pnode->next = list->head;
-	list->head = pnode;
+	pnew->next = list->head;
+	list->head = pnew;
 	list->len++;
 
 	return list;
@@ -30,41 +30,91 @@ link_list_t *list_add_node_head(link_list_t *list, int val)
 
 link_list_t *list_add_node_tail(link_list_t *list, int val)
 {
-	list_node_t *pnode;
+	list_node_t *pnew;
 	list_node_t *p;
 	list_node_t *pre;
 	
-	pnode = (list_node_t *)malloc(sizeof(*pnode));
-	pnode->value = (int *)malloc(sizeof(int)); 
-	*pnode->value = val;
+	pnew = (list_node_t *)malloc(sizeof(*pnew));
+	pnew->value = (int *)malloc(sizeof(int)); 
+	*pnew->value = val;
 	
 	p = list->head;
 	while (p != NULL) {
 		pre = p;
 		p = p->next;
 	}
-	pre->next = pnode;
+	pre->next = pnew;
 
 	return list;
 }
 
 link_list_t *list_insert_node(link_list_t *list, int oldval, int val, bool after)
 {
+	list_node_t *cur;
+	list_node_t *pre;
+	list_node_t *pnew;
+
+	pnew = (list_node_t *)malloc(sizeof(list_node_t));
+	pnew->value = (int *)malloc(sizeof(int));
+	*pnew->value = val;
+
+	cur = list->head;
+	pre = list->head;
+	if (cur == NULL) {
+		list->head = pnew;
+		list->len = 1;
+		return list;
+	}
+
+	while (cur != NULL && *cur->value != oldval) {
+		pre = cur;
+		cur = cur->next;
+	}
+	
+	printf("### pre:%d cur:%d\n", *pre->value, *cur->value);
+	if (after == true) {
+		pnew->next = cur->next;
+		cur->next = pnew;
+	} else {
+		pre->next = pnew;
+		pnew->next = cur;
+			
+	}
+
 	return list;
 }
 
 void list_del_node(link_list_t *list, int val)
 {
-	list_node_t *p;
+	list_node_t *cur;
 	list_node_t *pre;
-	list_node_t *tmp;
-	p = list->head;
 
 	if (list == NULL)
 		return;
 
-	while (p != NULL) {
+	cur = list->head;
+	pre = list->head;
+
+	while (cur != NULL && *cur->value !=val) {
+		pre = cur;
+		cur = cur->next;
 	}
+
+	if (cur == NULL) {
+		printf("not find value in the list\n");
+		return;
+	}
+
+	if (pre == list->head && *pre->value == val) {
+		list->head = pre->next;
+	} else {
+		pre->next = cur->next;
+		pre = cur;
+	}
+
+	list->len--;
+	free(pre->value);
+	free(pre);
 }
 
 size_t list_length(link_list_t *list)
@@ -91,11 +141,28 @@ void list_release(link_list_t *list)
 	free(list);
 }
 
+//void list_sort(link_list_t *list)
+//{
+//	list_node_t *p;
+//	list_node_t *q;
+//	int i, j;
+//	
+//	if (list->head == NULL && list->head->next == NULL)
+//		return;
+//
+//	for (p = list->head; p->next != NULL; p = p->next) {
+//
+//		//for (q = )
+//	}
+//
+//}
+
 void list_print(link_list_t *list)
 {
 	list_node_t *pnode;
 	pnode = list->head;
 
+	printf("print list:\n");
 	while (pnode != NULL) {
 		if (pnode->value != NULL)
 			printf("%d\n", *pnode->value);
@@ -109,10 +176,26 @@ int main(int argc, char **argv)
 
 	plist = list_init();
 
+	list_print(plist);
+	list_insert_node(plist, 1, 10, true);
+	list_print(plist);
+	list_add_node_head(plist, 5);
 	list_add_node_head(plist, 2);
 	list_add_node_head(plist, 4);
 	list_add_node_tail(plist, 1);
 	list_add_node_tail(plist, 3);
+	list_print(plist);
+	list_insert_node(plist, 2, 11, true);
+	list_print(plist);
+	list_insert_node(plist, 2, 9, false);
+	list_print(plist);
+	list_del_node(plist, 8);
+	list_print(plist);
+	list_del_node(plist, 4);
+	list_print(plist);
+	list_del_node(plist, 3);
+	list_print(plist);
+	list_del_node(plist, 5);
 	list_print(plist);
 
 	list_release(plist);
