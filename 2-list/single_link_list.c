@@ -71,7 +71,7 @@ link_list_t *list_insert_node(link_list_t *list, int oldval, int val, bool after
 		cur = cur->next;
 	}
 	
-	printf("### pre:%d cur:%d\n", *pre->value, *cur->value);
+	//printf("### pre:%d cur:%d\n", *pre->value, *cur->value);
 	if (after == true) {
 		pnew->next = cur->next;
 		cur->next = pnew;
@@ -141,21 +141,32 @@ void list_release(link_list_t *list)
 	free(list);
 }
 
-//void list_sort(link_list_t *list)
-//{
-//	list_node_t *p;
-//	list_node_t *q;
-//	int i, j;
-//	
-//	if (list->head == NULL && list->head->next == NULL)
-//		return;
-//
-//	for (p = list->head; p->next != NULL; p = p->next) {
-//
-//		//for (q = )
-//	}
-//
-//}
+
+void swap(list_node_t *p, list_node_t *q)
+{
+	int value;
+	
+	value = *p->value;
+	*p->value = *q->value;
+	*q->value = value;
+}
+
+void list_sort(link_list_t *list)
+{
+	list_node_t *p;
+	list_node_t *q;
+	
+	if (list->head == NULL && list->head->next == NULL)
+		return;
+
+	for (p = list->head; p != NULL; p = p->next) {
+		for (q = p->next; q != NULL; q = q->next) {
+			if (*q->value > *p->value)
+				swap(q, p);				
+		}
+	}
+
+}
 
 void list_print(link_list_t *list)
 {
@@ -165,9 +176,10 @@ void list_print(link_list_t *list)
 	printf("print list:\n");
 	while (pnode != NULL) {
 		if (pnode->value != NULL)
-			printf("%d\n", *pnode->value);
+			printf("%d ", *pnode->value);
 		pnode = pnode->next;
 	}
+	printf("\n");
 }
 
 int main(int argc, char **argv)
@@ -188,6 +200,9 @@ int main(int argc, char **argv)
 	list_insert_node(plist, 2, 11, true);
 	list_print(plist);
 	list_insert_node(plist, 2, 9, false);
+	list_print(plist);
+	printf("sort:\n");
+	list_sort(plist);
 	list_print(plist);
 	list_del_node(plist, 8);
 	list_print(plist);
