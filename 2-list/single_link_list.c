@@ -168,6 +168,21 @@ void list_sort(link_list_t *list)
 
 }
 
+void list_rewind(link_list_t *list)
+{
+	list_node_t *pre = NULL;
+	list_node_t *phead = list->head;
+	list_node_t *pnext;
+
+	while (phead != NULL) {
+		pnext = phead->next;
+		phead->next = pre;
+		pre = phead;
+		phead = pnext;
+	}
+	list->head = pre;
+}
+
 void list_print(link_list_t *list)
 {
 	list_node_t *pnode;
@@ -204,6 +219,8 @@ int main(int argc, char **argv)
 	printf("sort:\n");
 	list_sort(plist);
 	list_print(plist);
+	list_rewind(plist);
+	list_print(plist);	
 	list_del_node(plist, 8);
 	list_print(plist);
 	list_del_node(plist, 4);
