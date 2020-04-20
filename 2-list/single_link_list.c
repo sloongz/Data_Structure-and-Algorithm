@@ -142,7 +142,7 @@ void list_release(link_list_t *list)
 }
 
 
-void swap(list_node_t *p, list_node_t *q)
+static void swap(list_node_t *p, list_node_t *q)
 {
 	int value;
 	
