@@ -11,6 +11,8 @@ list_circlequeue_t *list_circlequeue_init()
 		return NULL;
 
 	queue->head = NULL;
+	queue->tail = NULL;
+	queue->size = 0;
 
 	return queue;
 }
@@ -36,24 +38,21 @@ int list_circlequeue_free(list_circlequeue_t *queue)
 int list_circlequeue_enqueue(list_circlequeue_t *queue, int val)
 {
 	list_node_t *pnew;
-	list_node_t *p;
 
 	pnew = (list_node_t *)malloc(sizeof(list_node_t));
 	if (pnew == NULL)
 		return -1;
 	pnew->value = val;
+	pnew->next = NULL;
 
 	if (queue->head == NULL) {
 		queue->head = pnew;
-		return 0;
+	} else {
+		queue->tail->next = pnew;
 	}
 
-	p = queue->head;
-	while (p->next != NULL) {
-		p = p->next;
-	}
-	
-	p->next = pnew;
+	queue->tail = pnew;
+	queue->size++;
 
 	return 0;
 }
@@ -71,7 +70,22 @@ int list_circlequeue_dequeue(list_circlequeue_t *queue)
 	ret = p->value;
 	free(p);
 
+	queue->size--;
+
 	return ret;
+}
+
+void list_circlequeue_dump(list_circlequeue_t *queue)
+{
+	list_node_t *p;
+
+	printf("dump queue:");
+	p = queue->head;
+	while (p != NULL) {
+		printf("%d ", p->value);
+		p = p->next;
+	}
+	printf("\n");
 }
 
 int main()
@@ -85,11 +99,15 @@ int main()
 	list_circlequeue_enqueue(queue, 4);
 	list_circlequeue_enqueue(queue, 5);
 
+	list_circlequeue_dump(queue);
+
+	printf("dequeue:%d, size:%d\n", list_circlequeue_dequeue(queue), queue->size);
 	printf("dequeue:%d\n", list_circlequeue_dequeue(queue));
 	printf("dequeue:%d\n", list_circlequeue_dequeue(queue));
+	list_circlequeue_dump(queue);
 	printf("dequeue:%d\n", list_circlequeue_dequeue(queue));
 	printf("dequeue:%d\n", list_circlequeue_dequeue(queue));
-	printf("dequeue:%d\n", list_circlequeue_dequeue(queue));
+	list_circlequeue_dump(queue);
 
 	list_circlequeue_free(queue);
 	return 0;
