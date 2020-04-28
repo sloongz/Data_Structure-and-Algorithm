@@ -36,7 +36,7 @@ int main()
 
 	select_sort(array, sizeof(array)/sizeof(int));
 
-	printf("insert sort result:\n");
+	printf("select sort result:\n");
 	for (i=0; i<sizeof(array)/sizeof(int); i++) {
 		printf("%d\n", array[i]);
 	}
