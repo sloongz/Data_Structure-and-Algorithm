@@ -129,7 +129,9 @@ void bucket_sort(int *array,int len)
 			//printf("bucket-%d : val-%d\n", i, array[k]);
 			k++;
 		}
+		free(bucket_queue[i]);
 	}
+
 }
 
 int main()
