@@ -113,30 +113,65 @@ int delete(skip_list_t *sklist, int value)
 
 	update = (node_t **)malloc(sizeof(node_t *)*sklist->level);
 
+	//找到每层节点的前一个节点
 	prev = sklist->head;
-	for (i=sklist->level-1; i>0; i--) {
+	for (i=sklist->level-1; i>=0; i--) {
 		while ( (pnode=prev->next[i]) != NULL && pnode->val < value) {
 			prev = pnode;
 		}
 		update[i] = prev;
+		//printf("ddd level:%d, value:%d\n", i, update[i]->val);
 	}
 
-	if (pnode!=NULL && pnode->val == value) {
-		printf("\n");	
-	} else {
-		printf("can not find value:%d\n", value);
-		return -1;
+	//删除每层节点
+	for (i=sklist->level-1; i>=0; i--) {
+		if (update[i]->next[i] != NULL) {
+			pnode = update[i]->next[i];
+			if (pnode->val == value) {
+				printf("del val:%d\n", pnode->val);
+				update[i]->next[i] = pnode->next[i];
+			}
+		}
+	}
+	//释放删除的内存
+	if (pnode->val == value) {
+		free(pnode);
 	}
 
 	return 0;
 }
+
+//查找
+int find(skip_list_t *sklist, int value)
+{
+	node_t *prev;
+	node_t *pnode;
+	int i;
+
+	//找节点
+	prev = sklist->head;
+	for (i=sklist->level-1; i>=0; i--) {
+		while ((pnode = prev->next[i]) != NULL && pnode->val < value) {
+			prev = pnode;
+		}
+		if (pnode != NULL) {
+			if (pnode->val == value) {
+				printf("find, level:%d, value:%d\n", i, pnode->val);
+				return 0;
+			}	
+		}
+	}
+
+	return -1;
+}
+
 
 //销毁
 void destory(skip_list_t *sklist)
 {
 	node_t *pnode;
 	
-	while (sklist->head->next[0] != NULL) {
+	while (sklist->head) {
 		pnode = sklist->head;
 		sklist->head = sklist->head->next[0];
 		free(pnode);
@@ -170,10 +205,19 @@ int main()
 
 	sklist = skip_list_create(5);
 
+	printf("\n=======insert===========\n");
 	for (i=1; i<10; i++) {
 		insert(sklist, i*2);	
 	}
 	
+	dump_skip_list(sklist);
+
+	printf("\n=======find===========\n");
+	find(sklist, 12);
+
+	printf("\n=======delete===========\n");
+	delete(sklist, 14);
+
 	dump_skip_list(sklist);
 
 	destory(sklist);
