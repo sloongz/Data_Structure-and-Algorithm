@@ -27,17 +27,17 @@ struct hashtab_node {
 };
 
 struct hashtab {
-	struct hashtab_node_t **htable; /* hash table */
+	struct hashtab_node **htable; /* hash table */
 	int size; /* number of slots in hash table */
 	int nel; /* number of elements in hash table */
 	int (*hash_value)(struct hashtab *h, const void *key);
 		/* hash function */
-	int (*keycmp)(struct hashtab *h, const void *key1, const void *key2);
+	int (*keycmp)(struct hashtab *h, const void *key1, const void *key2/*, int size*/);
 		/* key comparison function */	
 };
 
 struct hashtab *hashtab_create(int (*hash_value)(struct hashtab *h, const void *key), 
-			int (*keycmp)(struct hashtab *h, const void *key1, const void *key2),
+			int (*keycmp)(struct hashtab *h, const void *key1, const void *key2/*, int size*/),
 			int size);
 int hashtab_insert(struct hashtab *h, void *key, void *d);
 void *hashtab_search(struct hashtab *h, const void *key);
@@ -62,13 +62,13 @@ int shash_value(struct hashtab *h, const void *key)
 	return (simple_hash_value((const char *)key) % h->size);
 }
 
-int key_cmpare(struct hashtab *h, const void *key1, const void *key2, int size)
+int key_cmpare(struct hashtab *h, const void *key1, const void *key2/*, int size*/)
 {
 	return strcmp((const char *)key1, (const char *)key2);
 }
 
 struct hashtab *hashtab_create(int (*hash_value)(struct hashtab *h, const void *key), 
-				int (*keycmp)(struct hashtab *h, const void *key1, const void *key2),
+				int (*keycmp)(struct hashtab *h, const void *key1, const void *key2/*, int size*/),
 				int size)
 {
 	struct hashtab *p;
@@ -99,46 +99,116 @@ struct hashtab *hashtab_create(int (*hash_value)(struct hashtab *h, const void *
 int hashtab_insert(struct hashtab *h, void *key, void *d)
 {
 	int hvalue;
-	struct hashtab_node *cur, *prev, *new;
+	struct hashtab_node *cur = NULL;
+	struct hashtab_node *prev = NULL;
+	struct hashtab_node *new = NULL;
 
 	if (!h || h->nel >= HASHTAB_MAX_NODES)
 		return -1;
 
 	hvalue = h->hash_value(h, key);
-	printf("hvalue:%d\n", hvalue);
-
-	prev = NULL;
 	cur = h->htable[hvalue];
-	while (cur && h->keycmp(h, key, cur->key)>0 ) {
+	printf("hvalue:%d, key:%s\n", hvalue, (char *)key);
+
+	//如果哈希表的位置是空跳过
+	//如果哈希表的位置不是空，找到哈希表的位置对应的链表中的位置
+	while (cur != NULL && h->keycmp(h, key, cur->key) > 0) {
 		prev = cur;
 		cur = cur->next;
 	}
 
-	if (cur && h->keycmp(h, key, cur->key) == 0) {
-		printf("not insert\n");
+	//找到的这个位置的key是重复的 就不用插入了
+	if (cur != NULL && h->keycmp(h, key, cur->key) == 0) {
+		printf("repeat key:%s\n", (char *)key);
 		return -1;
 	}
 
+	//在连表中建立这个node 把key存到这个node中
 	new = (struct hashtab_node *)malloc(sizeof(struct hashtab_node));
-	if (!new)
-		return -1;
-
 	new->key = key;
 	new->datum = d;
+	new->next = NULL;
 
-	if (!prev) { //头节点
-		//h->htable[hvalue] = new;
-		//new->next = NULL;
-		printf("head\n");
-	} else { //非头节点
-		//new->next = prev->next;
-		//prev->next = new;
-		printf("not head\n");
+	if (prev == NULL) {
+		printf("new value\n");
+		h->htable[hvalue] = new;
+	} else {
+		printf("old value\n");
+		new->next = prev->next;
+		prev->next = new;
 	}
-	
+
 	h->nel++;
 
 	return 0;
+}
+
+
+int hashtab_delete(struct hashtab *h, void *key)
+{
+	struct hashtab_node *cur = NULL;
+	struct hashtab_node *prev = NULL;
+	struct hashtab_node *pnode = NULL;
+	int hvalue;
+
+	hvalue = h->hash_value(h, key);
+	cur = h->htable[hvalue]; 
+
+	while (cur != NULL && h->keycmp(h, key, cur->key) > 0) {
+		prev = cur;
+		cur = cur->next;
+	}
+
+	if (cur == NULL) {
+		printf("hashtab not this key:%s, value:%d\n", (char *)key, hvalue);	
+		return -1;
+	}
+		
+	if (h->keycmp(h, key, cur->key) == 0) {
+		printf("find value:%s\n", (char *)key);
+		if (!prev) { //是哈希表节点 链表的头节点
+			pnode = cur;
+			h->htable[hvalue] = NULL;
+			free(pnode);
+		} else { //不是头节点
+			pnode = cur;
+			prev->next = cur->next;
+			free(pnode);
+		}
+		return 0;
+	}
+
+	printf("not find this key:%s, value:%d\n", (char *)key, hvalue);
+	return -1;
+}
+
+
+void *hashtab_search(struct hashtab *h, const void *key)
+{
+	struct hashtab_node *cur = NULL;
+	int hvalue;
+
+	printf("we want to search key:%s\n", (char *)key);
+
+	hvalue = h->hash_value(h, key);	
+	cur = h->htable[hvalue];
+
+	while (cur != NULL && h->keycmp(h, key, cur->key) > 0) {
+		cur = cur->next;
+	}
+
+	if (cur == NULL) {
+		printf("not search value:%d NULL\n", hvalue);
+		return NULL;
+	}
+
+	if (h->keycmp(h, key, cur->key) == 0) {
+		printf("search value:%d, key:%s\n", hvalue, (char *)cur->key);
+		return cur;
+	}
+	
+	printf("not search value:%d NULL\n", hvalue);
+	return NULL;
 }
 
 void hashtab_destroy(struct hashtab *h)
@@ -160,6 +230,24 @@ void hashtab_destroy(struct hashtab *h)
 	h->htable = NULL;
 
 	free(h);
+}
+
+void hashtab_dump(struct hashtab *h)
+{
+	struct hashtab_node *cur;
+	int i;
+
+	printf("dump-------------\n");
+	for (i=0; i<h->size; i++) {
+		cur = h->htable[i];
+		if (cur == NULL) {
+			printf("value %d NULL\n", i);
+		}
+		while (cur != NULL) {
+			printf("value %d key %s\n", i, (char *)cur->key);
+			cur = cur->next;
+		}
+	} 
 }
 
 int main()
@@ -184,6 +272,21 @@ int main()
 	for (i=0; i<sizeof(strs)/sizeof(char *); i++) {
 		hashtab_insert(h, strs[i], NULL);
 	}
+
+	hashtab_dump(h);
+
+	hashtab_delete(h, "hello");
+	hashtab_delete(h, "fake value");
+	hashtab_delete(h, "xxxxxxxx");
+
+	hashtab_dump(h);
+
+	hashtab_insert(h, strs[8], NULL);
+	hashtab_insert(h, "fake value", NULL);
+	hashtab_insert(h, "hello", NULL);
+	hashtab_search(h, "xxxxxxxx");
+
+	hashtab_dump(h);
 
 	hashtab_destroy(h);
 
